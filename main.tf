@@ -9,32 +9,32 @@ data "aws_organizations_organization" "org" {}
 data "aws_caller_identity" "current" {}
 
 locals {
-    account_id = data.aws_caller_identity.current.account_id
+  account_id = data.aws_caller_identity.current.account_id
 }
 
 locals {
   ou_arn = "arn:aws:organizations::${data.aws_caller_identity.current.account_id}:ou/${data.aws_organizations_organization.org.id}/${var.ou}"
-    }
+}
 
 # Create a SNS topic for root access keys
 resource "aws_sns_topic" "root_access_key_created" {
-  name = "root-access-key-alert"
+  name              = "root-access-key-alert"
   kms_master_key_id = "alias/rootalertsSNS"
 }
 
 # Create a SNS topic for root login
 resource "aws_sns_topic" "root_login" {
-  name = "root-login-alert"
+  name              = "root-login-alert"
   kms_master_key_id = "alias/rootalertsSNS"
-  
+
 }
 
-# Create Customer Managed Key for encrypting the SNS topic at rest
+# Create customer managed key for encrypting the SNS topic at rest
 resource "aws_kms_key" "sns_key" {
   description             = "Key for Root Alerts SNS"
   deletion_window_in_days = 7
-  policy = data.aws_iam_policy_document.sns-policy.json
-  enable_key_rotation = true
+  policy                  = data.aws_iam_policy_document.sns-policy.json
+  enable_key_rotation     = true
 }
 
 # Create key alias
@@ -61,7 +61,7 @@ data "aws_iam_policy_document" "sns-policy" {
     }
   }
 
-# Default KMS key policy (https://docs.aws.amazon.com/kms/latest/developerguide/key-policy-default.html)
+  # Default KMS key policy (https://docs.aws.amazon.com/kms/latest/developerguide/key-policy-default.html)
   statement {
     sid       = "Enable IAM User Permissions"
     effect    = "Allow"
@@ -78,19 +78,19 @@ data "aws_iam_policy_document" "sns-policy" {
 # Email addresses which will get alerts for root access key usage
 resource "aws_sns_topic_subscription" "root_access_key_subscription" {
 
-  count = length(var.emails)
+  count     = length(var.emails)
   topic_arn = aws_sns_topic.root_access_key_created.arn
   protocol  = "email"
-  endpoint = var.emails[count.index]
+  endpoint  = var.emails[count.index]
 
 }
 
 # Email addresses which will get alerts for root usage
 resource "aws_sns_topic_subscription" "root_login_subscription" {
-  count = length(var.emails)
+  count     = length(var.emails)
   topic_arn = aws_sns_topic.root_login.arn #aws_sns_topic.sns_topic.arn
   protocol  = "email"
-  endpoint = var.emails[count.index]
+  endpoint  = var.emails[count.index]
 }
 
 # Create a CloudWatch Logs metric filter for root access keys
@@ -110,7 +110,7 @@ resource "aws_cloudwatch_log_metric_filter" "rootlogin_filter" {
   name           = "RootLoginUsage"
   pattern        = "{$.userIdentity.type = \"Root\" && $.userIdentity.invokedBy NOT EXISTS && $.eventType !=\"AWsServiceEvent\"}"
   log_group_name = var.ct_log_group
-   metric_transformation {
+  metric_transformation {
     name      = "RootLoginUsage"
     namespace = "RootLoginUsage"
     value     = "1"
@@ -149,14 +149,14 @@ resource "aws_cloudwatch_metric_alarm" "root_login_alarm" {
   ]
 }
 
-#Control Tower control to restrict root (https://docs.aws.amazon.com/controltower/latest/userguide/strongly-recommended-controls.html#disallow-root-auser-actions)
+#AWS Control Tower control to restrict root (https://docs.aws.amazon.com/controltower/latest/userguide/strongly-recommended-controls.html#disallow-root-auser-actions)
 resource "aws_controltower_control" "root" {
   control_identifier = "arn:aws:controltower:${data.aws_region.current.name}::control/AWS-GR_RESTRICT_ROOT_USER"
-  target_identifier = local.ou_arn
+  target_identifier  = local.ou_arn
 }
 
-#Control Tower control to disallow creation of root access keys  (https://docs.aws.amazon.com/controltower/latest/userguide/strongly-recommended-controls.html#disallow-root-access-keys)
+#AWS Control Tower control to disallow creation of root access keys  (https://docs.aws.amazon.com/controltower/latest/userguide/strongly-recommended-controls.html#disallow-root-access-keys)
 resource "aws_controltower_control" "rootaccesskeys" {
   control_identifier = "arn:aws:controltower:${data.aws_region.current.name}::control/AWS-GR_RESTRICT_ROOT_USER_ACCESS_KEYS"
-  target_identifier = local.ou_arn
+  target_identifier  = local.ou_arn
 }
