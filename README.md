@@ -19,4 +19,4 @@ While these controls are not natively applicable to the management account, this
 - Edit the configuration 
     - Provide the email addresses where email notification should go for management accounts's root activty 
     - Provide the OU where the you want to enable the above controls
-- Deploy in the management account (terrform plan, terraform apply)
+- Deploy in the management account ( `terrform plan`, `terraform apply`)
