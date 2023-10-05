@@ -93,7 +93,7 @@ resource "aws_sns_topic_subscription" "root_login_subscription" {
   endpoint  = var.emails[count.index]
 }
 
-# Create a CloudWatch Logs metric filter for root access keys
+# CloudWatch Logs metric filter for root access keys
 resource "aws_cloudwatch_log_metric_filter" "rootaccesskey_filter" {
   name           = "RootAccessKeyUsage"
   pattern        = "{$.userIdentity.type = \"Root\" && $.eventName = \"CreateAccessKey\"}"
@@ -105,7 +105,7 @@ resource "aws_cloudwatch_log_metric_filter" "rootaccesskey_filter" {
   }
 }
 
-# Create a CloudWatch Logs metric filter for root login
+# CloudWatch Logs metric filter for root login
 resource "aws_cloudwatch_log_metric_filter" "rootlogin_filter" {
   name           = "RootLoginUsage"
   pattern        = "{$.userIdentity.type = \"Root\" && $.userIdentity.invokedBy NOT EXISTS && $.eventType !=\"AWsServiceEvent\"}"
@@ -117,7 +117,7 @@ resource "aws_cloudwatch_log_metric_filter" "rootlogin_filter" {
   }
 }
 
-# Create a CloudWatch Logs metric alarm to for root access keys usage
+# CloudWatch Logs metric alarm for root access keys usage
 resource "aws_cloudwatch_metric_alarm" "root_accesskeys_alarm" {
   alarm_name          = "root-access-key-usage"
   comparison_operator = "GreaterThanOrEqualToThreshold"
@@ -133,7 +133,7 @@ resource "aws_cloudwatch_metric_alarm" "root_accesskeys_alarm" {
   ]
 }
 
-# Create a CloudWatch Logs metric alarm to for root login
+# CloudWatch Logs metric alarm for root login
 resource "aws_cloudwatch_metric_alarm" "root_login_alarm" {
   alarm_name          = "root-login"
   comparison_operator = "GreaterThanOrEqualToThreshold"
